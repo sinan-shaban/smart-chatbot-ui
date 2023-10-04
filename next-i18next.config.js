@@ -20,6 +20,7 @@ module.exports = {
       "te",
       "vi",
       "zh",
+      "zh_TW",
       "ar",
     ],
   },
