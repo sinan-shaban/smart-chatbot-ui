@@ -1,5 +1,5 @@
 import { Message } from '@/types/chat';
-import { OpenAIModel } from '@/types/openai';
+import {OpenAIModel, OpenAIModelID} from '@/types/openai';
 
 import { Tiktoken } from 'tiktoken';
 
@@ -15,6 +15,11 @@ export const createMessagesToSend = (
     role: 'system',
     content: systemPrompt,
   };
+
+  if (model.id === OpenAIModelID.GPT_4_VISION) {
+    // return some dummy values
+    return { messages: messages, maxToken: 10, tokenCount: 10};
+  }
 
   let contentLength: number = 0;
   for (let i = messages.length - 1; i >= 0; i--) {

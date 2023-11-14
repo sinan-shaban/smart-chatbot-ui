@@ -13,11 +13,13 @@ import { useTranslation } from 'next-i18next';
 
 import { Plugin } from '@/types/agent';
 import { Message } from '@/types/chat';
-import { ChatMode, ChatModeID, ChatModes } from '@/types/chatmode';
+import { ChatMode, ChatModeID } from '@/types/chatmode';
+import { OpenAIModelID } from '@/types/openai';
 import { Prompt } from '@/types/prompt';
 
 import HomeContext from '@/pages/api/home/home.context';
 
+import { ChatInputImages, InputImage } from '@/components/Chat/ChatInputImages';
 import { ChatModeIcon } from '@/components/Chat/ChatModeIcon';
 
 import ChatContext from './Chat.context';
@@ -28,6 +30,7 @@ import { PromptList } from './PromptList';
 import { VariableModal } from './VariableModal';
 
 import classNames from 'classnames';
+
 
 interface Props {
   onSend: (
@@ -67,6 +70,7 @@ type ChatControlPanelProps = {
   onRegenerate: () => void;
   onStopConversation: () => void;
 };
+
 function ChatControlPanel({
   showStopButton,
   showRegenerateButton,
@@ -140,7 +144,8 @@ export const ChatInput = ({ onSend, onRegenerate, textareaRef }: Props) => {
   const [lastDownKey, setLastDownKey] = useState<string>('');
   const [endComposing, setEndComposing] = useState<boolean>(false);
   const [filteredPrompts, setFilteredPrompts] = useState<Prompt[]>(prompts);
-  const [filteredPublicPrompts, setFilteredPublicPrompts] = useState<Prompt[]>(publicPrompts);
+  const [filteredPublicPrompts, setFilteredPublicPrompts] =
+    useState<Prompt[]>(publicPrompts);
 
   const promptListRef = useRef<HTMLUListElement | null>(null);
 
@@ -172,8 +177,23 @@ export const ChatInput = ({ onSend, onRegenerate, textareaRef }: Props) => {
       return;
     }
 
-    onSend({ role: 'user', content }, chatMode, selectedPlugins);
+    let m = content;
+
+    if (selectedImages.length) {
+      m = JSON.stringify([
+        ...selectedImages.map((image) => ({
+          type: 'image_url',
+          image_url: {
+            url: image.content,
+          },
+        })),
+        { type: 'text', text: content },
+      ]);
+    }
+
+    onSend({ role: 'user', content: m }, chatMode, selectedPlugins);
     setContent('');
+    setSelectedImages([]);
 
     if (window.innerWidth < 640 && textareaRef && textareaRef.current) {
       textareaRef.current.blur();
@@ -200,7 +220,9 @@ export const ChatInput = ({ onSend, onRegenerate, textareaRef }: Props) => {
   };
 
   const handleInitModal = () => {
-    const selectedPrompt = [...filteredPrompts, ...filteredPublicPrompts][activePromptIndex];
+    const selectedPrompt = [...filteredPrompts, ...filteredPublicPrompts][
+      activePromptIndex
+    ];
     if (selectedPrompt) {
       setContent((prevContent) => {
         const newContent = prevContent?.replace(
@@ -223,7 +245,8 @@ export const ChatInput = ({ onSend, onRegenerate, textareaRef }: Props) => {
       return;
     }
     if (showPromptList) {
-      const totalPrompts = filteredPrompts.length + filteredPublicPrompts.length;
+      const totalPrompts =
+        filteredPrompts.length + filteredPublicPrompts.length;
       if (e.key === 'ArrowDown') {
         e.preventDefault();
         setActivePromptIndex((prevIndex) =>
@@ -313,14 +336,14 @@ export const ChatInput = ({ onSend, onRegenerate, textareaRef }: Props) => {
     const filteredPrompts = prompts.filter((prompt) =>
       prompt.name.toLowerCase().includes(promptInputValue.toLowerCase()),
     );
-    setFilteredPrompts(filteredPrompts)
+    setFilteredPrompts(filteredPrompts);
   }, [prompts, promptInputValue, setFilteredPrompts]);
 
   useEffect(() => {
     const filteredPublicPrompts = publicPrompts.filter((prompt) =>
       prompt.name.toLowerCase().includes(promptInputValue.toLowerCase()),
     );
-    setFilteredPublicPrompts(filteredPublicPrompts)
+    setFilteredPublicPrompts(filteredPublicPrompts);
   }, [publicPrompts, promptInputValue, setFilteredPublicPrompts]);
 
   useEffect(() => {
@@ -362,6 +385,8 @@ export const ChatInput = ({ onSend, onRegenerate, textareaRef }: Props) => {
     selectedConversation &&
     selectedConversation.messages.length > 0;
 
+  const [selectedImages, setSelectedImages] = useState<InputImage[]>([]);
+
   return (
     <div className="absolute bottom-0 left-0 w-full border-transparent bg-gradient-to-b from-transparent via-white to-white pt-6 dark:border-white/20 dark:via-[#343541] dark:to-[#343541] md:pt-2">
       <ChatControlPanel
@@ -383,13 +408,21 @@ export const ChatInput = ({ onSend, onRegenerate, textareaRef }: Props) => {
         </ChatInputContainer>
       )}
       <ChatInputContainer className="mb-4">
-        <button
-          className="absolute left-2 top-2 rounded-sm p-1 text-neutral-800 opacity-60 hover:bg-neutral-200 hover:text-neutral-900 dark:bg-opacity-50 dark:text-neutral-100 dark:hover:text-neutral-200"
-          onClick={() => setShowPluginSelect(!showPluginSelect)}
-          onKeyDown={(e) => {}}
-        >
-          <ChatModeIcon chatMode={chatMode} />
-        </button>
+        {selectedConversation?.model?.id === OpenAIModelID.GPT_4_VISION ? (
+          <ChatInputImages
+            images={selectedImages}
+            onImagesChange={setSelectedImages}
+          />
+        ) : (
+          <button
+            className="absolute left-2 top-2 rounded-sm p-1 text-neutral-800 opacity-60 hover:bg-neutral-200 hover:text-neutral-900 dark:bg-opacity-50 dark:text-neutral-100 dark:hover:text-neutral-200"
+            onClick={() => setShowPluginSelect(!showPluginSelect)}
+            onKeyDown={(e) => {}}
+          >
+            <ChatModeIcon chatMode={chatMode} />
+          </button>
+        )}
+
         {showPluginSelect && (
           <div className="absolute left-0 bottom-14 rounded bg-white dark:bg-[#343541]">
             <ChatModeSelect
@@ -443,6 +476,7 @@ export const ChatInput = ({ onSend, onRegenerate, textareaRef }: Props) => {
           onKeyDown={handleKeyDown}
         />
         <button
+          style={selectedImages.length ? { top: 'calc(100px + 0.5rem)' } : {}}
           className="absolute right-2 top-2 rounded-sm p-1 text-neutral-800 opacity-60 hover:bg-neutral-200 hover:text-neutral-900 dark:bg-opacity-50 dark:text-neutral-100 dark:hover:text-neutral-200"
           onClick={handleSend}
         >
@@ -452,21 +486,24 @@ export const ChatInput = ({ onSend, onRegenerate, textareaRef }: Props) => {
             <IconSend size={18} />
           )}
         </button>
-        {showPromptList && (filteredPrompts.length > 0 || filteredPublicPrompts.length > 0) && (
-          <div className="absolute bottom-12 w-full">
-            <PromptList
-              activePromptIndex={activePromptIndex}
-              prompts={filteredPrompts}
-              publicPrompts={filteredPublicPrompts}
-              onSelect={handleInitModal}
-              onMouseOver={setActivePromptIndex}
-              promptListRef={promptListRef}
-            />
-          </div>
-        )}
+        {showPromptList &&
+          (filteredPrompts.length > 0 || filteredPublicPrompts.length > 0) && (
+            <div className="absolute bottom-12 w-full">
+              <PromptList
+                activePromptIndex={activePromptIndex}
+                prompts={filteredPrompts}
+                publicPrompts={filteredPublicPrompts}
+                onSelect={handleInitModal}
+                onMouseOver={setActivePromptIndex}
+                promptListRef={promptListRef}
+              />
+            </div>
+          )}
         {isModalVisible && (
           <VariableModal
-            prompt={[...filteredPrompts, ...filteredPublicPrompts][activePromptIndex]}
+            prompt={
+              [...filteredPrompts, ...filteredPublicPrompts][activePromptIndex]
+            }
             variables={variables}
             onSubmit={handleSubmit}
             onClose={() => setIsModalVisible(false)}
