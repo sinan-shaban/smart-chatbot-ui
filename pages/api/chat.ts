@@ -15,8 +15,17 @@ import { authOptions } from '@/pages/api/auth/[...nextauth]';
 
 import path from 'node:path';
 import loggerFn from 'pino';
+import {OpenAIModelID} from "@/types/openai";
 
 const logger = loggerFn({ name: 'chat' });
+
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '20mb' // Set desired value here
+    }
+  }
+}
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   // Vercel Hack
@@ -28,15 +37,17 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const session = await getServerSession(req, res, authOptions);
-  if (session && process.env.AUDIT_LOG_ENABLED === 'true') {
-    logger.info({ event: 'chat', user: session.user });
-  }
 
   const userId = await getUserHash(req, res);
   const { model, messages, key, prompt, temperature } = ChatBodySchema.parse(
     req.body,
   );
+
+  const session = await getServerSession(req, res, authOptions);
+  if (session && process.env.AUDIT_LOG_ENABLED === 'true') {
+    logger.info({ event: 'chat', user: session.user, model: model.name});
+  }
+
   try {
     await verifyUserLlmUsage(userId, model.id);
   } catch (e: any) {

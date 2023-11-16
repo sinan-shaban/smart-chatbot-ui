@@ -1,5 +1,5 @@
 import { Message } from '@/types/chat';
-import { OpenAIModel } from '@/types/openai';
+import {OpenAIModel, OpenAIModelID} from '@/types/openai';
 
 import {
   OPENAI_API_HOST,
@@ -57,6 +57,21 @@ export const OpenAIStream = async (
   if (OPENAI_API_TYPE === 'azure') {
     url = `${OPENAI_API_HOST}/openai/deployments/${model.azureDeploymentId}/chat/completions?api-version=${OPENAI_API_VERSION}`;
   }
+
+  const msgs = messages.map((m) => {
+    try {
+      return {
+        role: m.role,
+        content: JSON.parse(m.content),
+      };
+    } catch (e) {
+      return {
+        role: m.role,
+        content: m.content,
+      };
+      }
+  });
+
   const res = await fetch(url, {
     headers: {
       'Content-Type': 'application/json',
@@ -79,9 +94,9 @@ export const OpenAIStream = async (
           role: 'system',
           content: systemPrompt,
         },
-        ...messages,
+        ...msgs,
       ],
-      // max_tokens: maxTokens,
+      ...(model.id === OpenAIModelID.GPT_4_VISION ? {max_tokens: 4000} : {}),
       temperature: temperature,
       stream: true,
     }),
@@ -116,7 +131,7 @@ export const OpenAIStream = async (
           if (data !== '[DONE]') {
             try {
               const json = JSON.parse(data);
-              if (json.choices[0].finish_reason != null) {
+              if (json.choices[0].finish_reason != null || json.choices[0].finish_details != null) {
                 controller.close();
                 return;
               }

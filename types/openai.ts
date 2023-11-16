@@ -8,6 +8,7 @@ export enum OpenAIModelID {
   GPT_4 = 'gpt-4',
   GPT_4_32K = 'gpt-4-32k',
   GPT_4_128K = 'gpt-4-1106-preview',
+  GPT_4_VISION = 'gpt-4-vision-preview',
   TEXT_EMBEDDING_ADA_002 = 'text-embedding-ada-002',
 }
 
@@ -76,6 +77,13 @@ export const OpenAIModels: Record<OpenAIModelID, OpenAIModel> = {
   [OpenAIModelID.GPT_4_128K]: {
     id: OpenAIModelID.GPT_4_128K,
     name: 'GPT-4-128K',
+    maxLength: 384000,
+    tokenLimit: 128000,
+    type: OpenAIModelType.CHAT,
+  },
+  [OpenAIModelID.GPT_4_VISION]: {
+    id: OpenAIModelID.GPT_4_VISION,
+    name: 'GPT-4-Vision',
     maxLength: 384000,
     tokenLimit: 128000,
     type: OpenAIModelType.CHAT,

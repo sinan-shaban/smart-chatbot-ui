@@ -150,6 +150,25 @@ export const ChatMessage: FC<Props> = memo(({ message, messageIndex }) => {
     }
   }, [isEditing]);
 
+  const printMessageContent = (content: string) => {
+    try {
+      const jsonContent = JSON.parse(content);
+
+      const elements: React.JSX.Element[] = [];
+      jsonContent.forEach((m: any, index: any) => {
+        if (m.type === "image_url") {
+          elements.push(<img key={index} src={m.image_url?.url} />)
+        } else if (m.type === 'text') {
+          elements.push(<p key={index}>{m.text}</p>)
+        }
+      })
+
+      return elements;
+    } catch (error) {
+      return content;
+    }
+  }
+
   return (
     <div
       className={`group md:px-4 ${
@@ -212,7 +231,7 @@ export const ChatMessage: FC<Props> = memo(({ message, messageIndex }) => {
                 </div>
               ) : (
                 <div className="prose whitespace-pre-wrap dark:prose-invert flex-1">
-                  {message.content}
+                  {printMessageContent(message.content)}
                 </div>
               )}
 
