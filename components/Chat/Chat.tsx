@@ -1,4 +1,4 @@
-import { IconArrowDown, IconClearAll, IconSettings } from '@tabler/icons-react';
+import {IconArrowDown, IconClearAll, IconPlus, IconSettings, IconDownload} from '@tabler/icons-react';
 import {
   memo,
   useCallback,
@@ -32,8 +32,12 @@ import { ChatLoader } from './ChatLoader';
 import { ErrorMessageDiv } from './ErrorMessageDiv';
 import { MemoizedChatMessage } from './MemoizedChatMessage';
 import { ModelSelect } from './ModelSelect';
+import { ImageSizeSelect } from './ImageSizeSelect';
 import { SystemPrompt } from './SystemPrompt';
 import { TemperatureSlider } from './Temperature';
+import {OpenAIModelID} from "@/types/openai";
+import {ImageQualitySelect} from "@/components/Chat/ImageQualitySelect";
+import {ImageStyleSelect} from "@/components/Chat/ImageStyleSelect";
 
 export const Chat = memo(() => {
   const { t } = useTranslation('chat');
@@ -200,6 +204,25 @@ export const Chat = memo(() => {
     };
   }, [messagesEndRef]);
 
+  const hideChatInput = [OpenAIModelID.DALL_E_2, OpenAIModelID.DALL_E_3].includes(selectedConversation?.model.id as OpenAIModelID)
+      && selectedConversation?.messages
+      && selectedConversation?.messages.length > 0;
+
+  const downloadGeneratedImage = () => {
+    if(!selectedConversation?.messages) {
+      return
+    }
+
+    const message = selectedConversation.messages[selectedConversation.messages.length - 1];
+    const content =  JSON.parse(message.content);
+    const encodedImage = content?.image_url?.url;
+
+    const a = document.createElement("a");
+    a.href = "data:image/png;base64," + encodedImage;
+    a.download = "generated-image.png";
+    a.click(); //Downloaded file
+  }
+
   return (
     <ChatContext.Provider value={{ ...chatContextValue }}>
       <div className="relative flex-1 overflow-hidden bg-white dark:bg-[#343541]">
@@ -268,24 +291,33 @@ export const Chat = memo(() => {
                     {models.length > 0 && (
                       <div className="flex h-full flex-col space-y-4 rounded-lg border border-neutral-200 p-4 dark:border-neutral-600">
                         <ModelSelect />
-
-                        <SystemPrompt
-                          conversation={selectedConversation}
-                          systemPrompt={systemPrompt}
-                          prompts={prompts}
-                          publicPrompts={publicPrompts}
-                          onChangePrompt={(prompt) => setSystemPrompt(prompt)}
-                        />
-
-                        <label className="mb-2 text-left text-neutral-700 dark:text-neutral-400">
-                          {t('Temperature')}
-                        </label>
-
-                        <TemperatureSlider
-                          onChangeTemperature={(temperature) =>
-                            setTemperature(temperature)
+                        {[OpenAIModelID.DALL_E_2, OpenAIModelID.DALL_E_3].includes(selectedConversation.model.id) ? <>
+                          <ImageSizeSelect />
+                          {
+                            selectedConversation.model.id === OpenAIModelID.DALL_E_3 && <>
+                                <ImageQualitySelect />
+                                <ImageStyleSelect />
+                            </>
                           }
+                        </> : <>
+                          <SystemPrompt
+                            conversation={selectedConversation}
+                            systemPrompt={systemPrompt}
+                            prompts={prompts}
+                            publicPrompts={publicPrompts}
+                            onChangePrompt={(prompt) => setSystemPrompt(prompt)}
                         />
+
+                          <label className="mb-2 text-left text-neutral-700 dark:text-neutral-400">
+                            {t('Temperature')}
+                          </label>
+
+                          <TemperatureSlider
+                              onChangeTemperature={(temperature) =>
+                                  setTemperature(temperature)
+                              }
+                          /></>}
+
                       </div>
                     )}
                   </div>
@@ -327,26 +359,55 @@ export const Chat = memo(() => {
 
                   {loading && <ChatLoader />}
 
-                  <div
-                    className="h-[210px] bg-white dark:bg-[#343541]"
-                    ref={messagesEndRef}
-                  />
+                  {
+                      !hideChatInput && (<div
+                          className="h-[210px] bg-white dark:bg-[#343541]"
+                          ref={messagesEndRef}
+                      />)
+                  }
+
                 </>
               )}
             </div>
 
-            <ChatInput
-              textareaRef={textareaRef}
-              onSend={(message, chatMode, plugins) => {
-                setCurrentMessage(message);
-                handleSend(message, 0, chatMode, plugins);
-              }}
-              onRegenerate={(chatMode, plugins) => {
-                if (currentMessage) {
-                  handleSend(currentMessage, 2, chatMode, plugins);
-                }
-              }}
-            />
+            {
+              hideChatInput ? (
+                  <div className='flex flex-col gap-4 items-center pt-5'>
+                    <div>
+                    <button
+                        className="text-sidebar w-[250px] flex flex-shrink-0 cursor-pointer select-none items-center gap-3 rounded-md border border-white/20 p-3 text-white transition-colors duration-200 hover:bg-gray-500/10"
+                        onClick={downloadGeneratedImage}
+                    >
+                      <IconDownload size={16}/>
+                      Download
+                    </button>
+                    </div>
+                    <div>
+                    <button
+                        className="text-sidebar w-[250px] flex flex-shrink-0 cursor-pointer select-none items-center gap-3 rounded-md border border-white/20 p-3 text-white transition-colors duration-200 hover:bg-gray-500/10"
+                        onClick={() => {
+                          conversationsAction.add();
+                        }}
+                    >
+                      <IconPlus size={16}/>
+                      Generate new image
+                    </button>
+                    </div>
+                  </div>
+              ) : (<ChatInput
+                  textareaRef={textareaRef}
+                  onSend={(message, chatMode, plugins) => {
+                    setCurrentMessage(message);
+                    handleSend(message, 0, chatMode, plugins);
+                  }}
+                  onRegenerate={(chatMode, plugins) => {
+                    if (currentMessage) {
+                      handleSend(currentMessage, 2, chatMode, plugins);
+                    }
+                  }}
+              />)
+            }
+
           </>
         )}
         {showScrollDownButton && (

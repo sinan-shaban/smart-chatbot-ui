@@ -18,6 +18,7 @@ const useApiError = () => {
   const defaultMessage = t("errorDefault", translationContext) || "Error";
 
   const resolveResponseMessage = async (error: any): Promise<string> => {
+    console.log(error);
     if (error instanceof Response) {
       const json = await error.json();
       if (json.error?.code) {

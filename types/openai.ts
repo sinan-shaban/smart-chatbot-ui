@@ -9,13 +9,15 @@ export enum OpenAIModelID {
   GPT_4_32K = 'gpt-4-32k',
   GPT_4_128K = 'gpt-4-1106-preview',
   GPT_4_VISION = 'gpt-4-vision-preview',
+  DALL_E_2 = 'dall-e-2',
+  DALL_E_3 = 'dall-e-3',
   TEXT_EMBEDDING_ADA_002 = 'text-embedding-ada-002',
 }
 
 export enum OpenAIModelType {
   CHAT = 'chat',
   COMPLETION = 'completion',
-  EMDEDDING = 'embedding'
+  EMDEDDING = 'embedding',
 }
 
 export const OpenAIModelSchema = z.object({
@@ -94,5 +96,19 @@ export const OpenAIModels: Record<OpenAIModelID, OpenAIModel> = {
     maxLength: 24000,
     tokenLimit: 8000,
     type: OpenAIModelType.EMDEDDING
+  },
+  [OpenAIModelID.DALL_E_2]: {
+    id: OpenAIModelID.DALL_E_2,
+    name: 'DALL-E 2',
+    maxLength: 1000,
+    tokenLimit: 128000,
+    type: OpenAIModelType.CHAT
+  },
+  [OpenAIModelID.DALL_E_3]: {
+    id: OpenAIModelID.DALL_E_3,
+    name: 'DALL-E 3',
+    maxLength: 4000,
+    tokenLimit: 128000,
+    type: OpenAIModelType.CHAT
   },
 };

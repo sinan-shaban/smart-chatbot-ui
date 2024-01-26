@@ -13,8 +13,8 @@ export default trpcNext.createNextApiHandler({
 export const config = {
   api: {
     bodyParser: {
-      sizeLimit: '20mb',
+      sizeLimit: '200mb',
     },
-    responseLimit: '20mb',
+    responseLimit: '200mb',
   },
 };
