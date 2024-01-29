@@ -1,29 +1,35 @@
-import {
-  IconCheck,
-  IconCopy,
-  IconEdit,
-  IconRobot,
-  IconTrash,
-  IconUser,
-} from '@tabler/icons-react';
+import { IconCheck, IconCopy, IconEdit, IconRobot, IconTrash, IconUser } from '@tabler/icons-react';
 import { FC, memo, useContext, useEffect, useRef, useState } from 'react';
 
+
+
 import { useTranslation } from 'next-i18next';
+
+
 
 import useConversations from '@/hooks/useConversations';
 import useMesseageSender from '@/hooks/useMessageSender';
 
+
+
 import { Message } from '@/types/chat';
 
+
+
 import HomeContext from '@/pages/api/home/home.context';
+
+
 
 import { CodeBlock } from '../Markdown/CodeBlock';
 import { MemoizedReactMarkdown } from '../Markdown/MemoizedReactMarkdown';
 import ChatContext from './Chat.context';
 
+
+
 import rehypeMathjax from 'rehype-mathjax';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
+
 
 export interface Props {
   message: Message;
@@ -150,9 +156,19 @@ export const ChatMessage: FC<Props> = memo(({ message, messageIndex }) => {
     }
   }, [isEditing]);
 
-  const printMessageContent = (content: string) => {
+  const printMessageContent = (content: string, role?: string) => {
     try {
       const jsonContent = JSON.parse(content);
+
+      if (role === 'assistant') {
+        const item = jsonContent;
+        if(item.type === 'text') {
+          return item.content;
+        }
+        else if (item.type === 'image_url') {
+          return `![Generated Image](data:image/png;base64,${item.image_url?.url})`
+        }
+      }
 
       const elements: React.JSX.Element[] = [];
       jsonContent.forEach((m: any, index: any) => {
@@ -298,7 +314,7 @@ export const ChatMessage: FC<Props> = memo(({ message, messageIndex }) => {
                   },
                 }}
               >
-                {message.content}
+                {printMessageContent(message.content, message.role)}
               </MemoizedReactMarkdown>
 
               <div className="md:-mr-8 ml-1 md:ml-0 flex flex-col md:flex-row gap-4 md:gap-1 items-center md:items-start justify-end md:justify-start">

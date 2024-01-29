@@ -28,6 +28,9 @@ export interface HomeInitialState {
   messageError: boolean;
   searchTerm: string;
   defaultModelId: OpenAIModelID | undefined;
+  defaultStyle: string;
+  defaultSize: string;
+  defaultQuality: string;
   serverSideApiKeyIsSet: boolean;
   serverSidePluginKeysSet: boolean;
   stopConversationRef: MutableRefObject<boolean>;
@@ -61,6 +64,9 @@ export const initialState: Partial<HomeInitialState> = {
   messageError: false,
   searchTerm: '',
   defaultModelId: undefined,
+  defaultStyle: 'natural',
+  defaultSize: '1024x1024',
+  defaultQuality: 'standard',
   serverSideApiKeyIsSet: false,
   serverSidePluginKeysSet: false,
   isAzureOpenAI: false,

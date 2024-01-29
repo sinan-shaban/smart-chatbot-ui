@@ -2,7 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 
 import { DEFAULT_SYSTEM_PROMPT } from '@/utils/app/const';
-import { OpenAIStream } from '@/utils/server';
+import {DallERequest, OpenAIStream} from '@/utils/server';
 import { saveLlmUsage, verifyUserLlmUsage } from '@/utils/server/llmUsage';
 import { ensureHasValidSession, getUserHash } from '@/utils/server/auth';
 import { createMessagesToSend } from '@/utils/server/message';
@@ -21,8 +21,9 @@ const logger = loggerFn({ name: 'chat' });
 
 export const config = {
   api: {
+    responseLimit: false,
     bodyParser: {
-      sizeLimit: '20mb' // Set desired value here
+      sizeLimit: '200mb' // Set desired value here
     }
   }
 }
@@ -39,17 +40,19 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
 
   const userId = await getUserHash(req, res);
-  const { model, messages, key, prompt, temperature } = ChatBodySchema.parse(
+  const { model, messages, key, prompt, temperature, size, style, quality } = ChatBodySchema.parse(
     req.body,
   );
 
   const session = await getServerSession(req, res, authOptions);
   if (session && process.env.AUDIT_LOG_ENABLED === 'true') {
-    logger.info({ event: 'chat', user: session.user, model: model.name});
+    logger.info({ event: 'chat', user: session.user, model: model.name, image_size: size, image_style: style, image_quality: quality});
   }
 
   try {
-    await verifyUserLlmUsage(userId, model.id);
+    if (model.id !== OpenAIModelID.DALL_E_2 && model.id !== OpenAIModelID.DALL_E_3 ) {
+      await verifyUserLlmUsage(userId, model.id);
+    }
   } catch (e: any) {
     return res.status(429).json({ error: e.message });
   }
@@ -70,44 +73,59 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     if (messagesToSend.length === 0) {
       throw new Error('message is too long');
     }
-    const stream = await OpenAIStream(
-      model,
-      systemPromptToSend,
-      temperature,
-      key,
-      messagesToSend,
-      maxToken,
-    );
-    res.status(200);
-    res.writeHead(200, {
-      Connection: 'keep-alive',
-      'Content-Encoding': 'none',
-      'Transfer-Encoding': 'chunked',
-      'Cache-Control': 'no-cache',
-      'Content-Type': 'text/event-stream',
-    });
-    const decoder = new TextDecoder();
-    const reader = stream.getReader();
-    let closed = false;
-    let responseText = "";
-    while (!closed) {
-      await reader.read().then(({ done, value }) => {
-        if (done) {
-          closed = true;
-          res.end();
-        } else {
-          const text = decoder.decode(value);
-          responseText += text;
-          res.write(text);
-        }
+
+    if(model.id === OpenAIModelID.DALL_E_2 || model.id === OpenAIModelID.DALL_E_3) {
+      const result = await DallERequest(model, messages[messages.length - 1].content, size, style, quality);
+      res.status(200);
+      res.writeHead(200, {
+        Connection: 'keep-alive',
+        'Content-Encoding': 'none',
+        'Transfer-Encoding': 'chunked',
+        'Cache-Control': 'no-cache',
+        'Content-Type': 'text/event-stream',
       });
+      res.write(JSON.stringify({type: "image_url", image_url: {url: result.data[0].b64_json}}));
+      res.end();
+    } else {
+      const stream = await OpenAIStream(
+        model,
+        systemPromptToSend,
+        temperature,
+        key,
+        messagesToSend,
+        maxToken,
+      );
+      res.status(200);
+      res.writeHead(200, {
+        Connection: 'keep-alive',
+        'Content-Encoding': 'none',
+        'Transfer-Encoding': 'chunked',
+        'Cache-Control': 'no-cache',
+        'Content-Type': 'text/event-stream',
+      });
+      const decoder = new TextDecoder();
+      const reader = stream.getReader();
+      let closed = false;
+      let responseText = "";
+      while (!closed) {
+        await reader.read().then(({done, value}) => {
+          if (done) {
+            closed = true;
+            res.end();
+          } else {
+            const text = decoder.decode(value);
+            responseText += text;
+            res.write(text);
+          }
+        });
+      }
+      const completionTokenCount = encoding.encode(responseText).length;
+      await saveLlmUsage(userId, model.id, "chat", {
+        prompt: tokenCount,
+        completion: completionTokenCount,
+        total: tokenCount + completionTokenCount
+      })
     }
-    const completionTokenCount = encoding.encode(responseText).length;
-    await saveLlmUsage(userId, model.id, "chat", {
-      prompt: tokenCount,
-      completion: completionTokenCount,
-      total: tokenCount + completionTokenCount
-    })
   } catch (error) {
     console.error(error);
     const errorRes = getErrorResponseBody(error);

@@ -22,6 +22,9 @@ export const ChatBodySchema = z.object({
   temperature: z.number(),
   googleAPIKey: z.string().optional(),
   googleCSEId: z.string().optional(),
+  size: z.string().nullable().optional(),
+  style: z.string().nullable().optional(),
+  quality: z.string().nullable().optional(),
 });
 
 export type ChatBody = z.infer<typeof ChatBodySchema>;
@@ -46,6 +49,9 @@ export const ConversationSchema = z.object({
   prompt: z.string(),
   temperature: z.number(),
   folderId: z.string().nullable(),
+  size: z.string().nullable().optional(),
+  style: z.string().nullable().optional(),
+  quality: z.string().nullable().optional(),
 });
 
 export const ConversationSchemaArray = z.array(ConversationSchema);

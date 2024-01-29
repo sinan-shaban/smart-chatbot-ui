@@ -50,6 +50,9 @@ export const useMesseageSender = () => {
       key: apiKey,
       prompt: conversation.prompt,
       temperature: conversation.temperature,
+      size: conversation.size,
+      style: conversation.style,
+      quality: conversation.quality,
     };
     const chatModeRunner = chatModeSelector(chatMode);
     chatModeRunner.run({

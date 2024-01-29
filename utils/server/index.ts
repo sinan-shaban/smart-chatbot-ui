@@ -1,19 +1,15 @@
 import { Message } from '@/types/chat';
-import {OpenAIModel, OpenAIModelID} from '@/types/openai';
-
-import {
-  OPENAI_API_HOST,
-  OPENAI_API_TYPE,
-  OPENAI_API_VERSION,
-  OPENAI_ORGANIZATION,
-} from '../app/const';
-
-import {
-  ParsedEvent,
-  ReconnectInterval,
-  createParser,
-} from 'eventsource-parser';
 import { ApiError, ApiErrorBody, ErrorResponseCode } from '@/types/error';
+import { OpenAIModel, OpenAIModelID } from '@/types/openai';
+
+
+
+import { OPENAI_API_HOST, OPENAI_API_TYPE, OPENAI_API_VERSION, OPENAI_ORGANIZATION } from '../app/const';
+
+
+
+import { ParsedEvent, ReconnectInterval, createParser } from 'eventsource-parser';
+
 
 export class OpenAIError extends ApiError {
   type: string;
@@ -159,4 +155,52 @@ export const OpenAIStream = async (
   });
 
   return stream;
+};
+
+
+export const DallERequest = async (
+  model: OpenAIModel,
+  prompt: string,
+  size?: string | null | undefined,
+  style?: string | null | undefined,
+  quality?: string | null | undefined,
+) => {
+  let url = `${OPENAI_API_HOST}/v1/images/generations`;
+
+  const body = {
+    model: model.id,
+    prompt: prompt,
+    response_format: 'b64_json',
+    style: style ?? 'natural',
+    size: size ?? '1024x1024',
+    quality: quality ?? 'standard'
+  };
+
+  const res = await fetch(url, {
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+    },
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+
+  if (res.status !== 200) {
+    const result = await res.json();
+    if (result.error) {
+      throw new OpenAIError(
+        result.error.message,
+        result.error.type,
+        result.error.param,
+        result.error.code,
+      );
+    } else {
+      throw new Error(
+        `OpenAI API returned an error`,
+      );
+    }
+  }
+
+  const result = await res.json();
+  return result;
 };

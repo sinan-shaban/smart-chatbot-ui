@@ -13,7 +13,9 @@ export const getTiktokenEncoding = async (model: string): Promise<Tiktoken> => {
   if (
     (modelId.indexOf('gpt-3.5') !== -1 || modelId.indexOf('gpt-4') !== -1) &&
     modelId !== OpenAIModelID.GPT_4_128K &&
-    modelId !== OpenAIModelID.GPT_4_VISION
+    modelId !== OpenAIModelID.GPT_4_VISION &&
+    modelId !== OpenAIModelID.DALL_E_2 &&
+    modelId !== OpenAIModelID.DALL_E_3
   ) {
     return encoding_for_model(modelId, {
       '<|im_start|>': 100264,
