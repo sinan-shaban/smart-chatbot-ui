@@ -204,7 +204,7 @@ export const Chat = memo(() => {
     };
   }, [messagesEndRef]);
 
-  const hideChatInput = [OpenAIModelID.DALL_E_2, OpenAIModelID.DALL_E_3].includes(selectedConversation?.model.id as OpenAIModelID)
+  const hideChatInput = [OpenAIModelID.DALL_E_2, OpenAIModelID.DALL_E_3].includes(selectedConversation?.model?.id as OpenAIModelID)
       && selectedConversation?.messages
       && selectedConversation?.messages.length > 0;
 
@@ -291,7 +291,7 @@ export const Chat = memo(() => {
                     {models.length > 0 && (
                       <div className="flex h-full flex-col space-y-4 rounded-lg border border-neutral-200 p-4 dark:border-neutral-600">
                         <ModelSelect />
-                        {[OpenAIModelID.DALL_E_2, OpenAIModelID.DALL_E_3].includes(selectedConversation.model.id) ? <>
+                        {[OpenAIModelID.DALL_E_2, OpenAIModelID.DALL_E_3].includes(selectedConversation?.model?.id) ? <>
                           <ImageSizeSelect />
                           {
                             selectedConversation.model.id === OpenAIModelID.DALL_E_3 && <>
