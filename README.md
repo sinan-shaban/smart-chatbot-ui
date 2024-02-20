@@ -64,7 +64,7 @@ vim .env.local
 Run with docker-compose:
 
 ```shell
-docker compose up -d
+docker-compose -f docker-compose.dev.yml up -d 
 ```
 
 ## Running Locally
