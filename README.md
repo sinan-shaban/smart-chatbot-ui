@@ -1,84 +1,23 @@
 # Smart Chatbot UI
 
-This repo is forked from [chatbot-ui](https://github.com/mckaywrigley/chatbot-ui).
+This repo is forked from [smart-chatbot-ui](https://github.com/dotneet/smart-chatbot-ui).
 
 This repository is highly experimental, so please do not expect compatibility when performing updates.
 
-## [DEMO](https://smart-chatbot-ui.vercel.app/)
+## Running Locally
 
-- Do not input personal information.
-- Conversation, prompts, folders are stored in mongodb.
-- Streaming response is not working in vercel environment.
-- Plugins are not working for vercel timeout limitation.
+**1. Start database**
 
-## Additional Features
-
-- SSO Auth(Google, GitHub)
-- ChatGPT compatible plugins
-- Python Interpreter Plugin
-- Persitent storage(MongoDB)
-- IME support
-
-![Chatbot UI](./docs/screenshot_2023-05-08.png)
-
-## Updates
-
-- Chatbot UI will be updated over time.
-- Expect frequent improvements.
-
-**Recent updates:**
-
-- [x] Python Interpreter (5/8/23)
-- [x] Multiple Users with MongoDB Support (4/19/23)
-- [x] Plugins(ChatGPT compatible) (4/17/23)
-- [x] SSO Auth(email pattern matching only) (4/15/23)
-- [x] Prompt templates (3/27/23)
-- [x] Regenerate & edit responses (3/25/23)
-- [x] Folders (3/24/23)
-- [x] Search chat content (3/23/23)
-- [x] Stop message generation (3/22/23)
-- [x] Import/Export chats (3/22/23)
-- [x] Custom system prompt (3/21/23)
-- [x] Error handling (3/20/23)
-- [x] GPT-4 support (access required) (3/20/23)
-- [x] Search conversations (3/19/23)
-- [x] Code syntax highlighting (3/18/23)
-- [x] Toggle sidebar (3/18/23)
-- [x] Conversation naming (3/18/23)
-- [x] GitHub flavored markdown (3/18/23)
-- [x] Add OpenAI API key in app (3/18/23)
-- [x] Markdown support (3/17/23)
-
-## Deploy
-
-**Docker**
-
-Setup enviroment variables:
-
-```bash
-cp .env.local.example .env.local
-# specify OPENAI_API_KEY, MONGODB_URI, MONGO_INITDB_ROOT_USERNAME, MONGO_INITDB_ROOT_PASSWORD
-vim .env.local
-```
-
-Run with docker-compose:
+Start MongoDB using Docker:
 
 ```shell
 docker-compose -f docker-compose.dev.yml up -d 
 ```
 
-## Running Locally
-
-**1. Clone Repo**
-
-```bash
-git clone https://github.com/dotneet/smart-chatbot-ui.git
-```
-
 **2. Install Dependencies**
 
 ```bash
-npm i
+npm install
 ```
 
 **3. Provide OpenAI API Key**
@@ -88,12 +27,8 @@ Create a .env.local file in the root of the repo with your OpenAI API Key:
 ```bash
 cp .env.local.example .env.local
 # Specify OPENAI_API_KEY
-vim .env.local
+nano .env.local
 ```
-
-> You can set `OPENAI_API_HOST` where access to the official OpenAI host is restricted or unavailable, allowing users to configure an alternative host for their specific needs.
-
-> Additionally, if you have multiple OpenAI Organizations, you can set `OPENAI_ORGANIZATION` to specify one.
 
 **4. Run MongoDB**
 
@@ -101,7 +36,7 @@ vim .env.local
 docker compose -f docker-compose.dev.yml up -d
 ```
 
-**5. Run App**
+**5. Run the Next.js app**
 
 ```bash
 npm run dev
@@ -109,7 +44,40 @@ npm run dev
 
 **6. Use it**
 
-You should be able to start chatting.
+You should be able to start chatting on http://localhost:3000.
+
+## Production
+
+**1. Pull the repository on the remove server**
+
+**2. Navigate to the `.deployment` directory**
+```bash
+cd .deployment
+```
+
+**3. Create `.env` file and configure the `OPENAI_API_KEY`, `ELASTIC_PASSWORD` and `KIBANA_PASSWORD`. If you want Google Authentication you need to also configure `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`**
+```bash
+#.deployment directory
+cp .env.local .env
+
+# configure the environment variables
+nano .env
+```
+
+**4. Run the following commands**
+
+```bash
+#.deployment directory
+# stop any existing containers
+docker-compose down
+# build the app
+docker-compose build
+# start the app
+docker-compose up -d
+```
+**5. Access the application by visiting https://chatbot.protal.biz/**
+
+**6. Access the chat logs using the `elastic` for username and the configured password `ELASTIC_PASSWORD` from the `.env` file by visiting https://logs-chatbot.protal.biz**
 
 ## Configuration
 
