@@ -68,6 +68,8 @@ nano .env
 
 ```bash
 #.deployment directory
+# pull the latest changes
+git pull
 # stop any existing containers
 docker-compose down
 # build the app
